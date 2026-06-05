@@ -16,11 +16,11 @@ export default function PropertyCard({ property }: { property: Property }) {
       </div>
       <div className="space-y-3 p-6">
         <div className="flex items-center justify-between gap-3 text-sm text-slate-500">
-          <span className="rounded-full bg-slate-100 px-3 py-1">{property.type}</span>
+          <span className="rounded-full bg-slate-100 px-3 py-1">{property.property_type}</span>
           <span className="font-semibold text-slate-900">${property.price.toLocaleString()}</span>
         </div>
         <h3 className="text-xl font-semibold text-slate-900">{property.title}</h3>
-        <p className="text-sm leading-6 text-slate-600">{property.location}</p>
+        <p className="text-sm leading-6 text-slate-600">{property.location.area}, {property.location.city}</p>
       </div>
     </Link>
   );
