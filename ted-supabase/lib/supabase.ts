@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/types';
 
 const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -10,4 +11,8 @@ if (!supabaseUrl || !supabaseAnon) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnon);
+/**
+ * Single shared Supabase client for the entire app.
+ * Typed against the generated Database interface from lib/types.ts
+ */
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnon);

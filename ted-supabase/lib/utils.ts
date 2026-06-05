@@ -1,49 +1,37 @@
-/**
- * Format a number as a USD price string.
- *
- * @example formatPrice(2500) → "$2,500"
- */
 export function formatPrice(price: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style:    'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(price);
+  return `KES ${new Intl.NumberFormat('en-KE').format(price)}/mo`;
 }
 
-/**
- * Format a Postgres ISO-8601 timestamp (or any date-like value) as a
- * human-readable string.
- *
- * @example formatDate("2024-03-01T12:00:00Z") → "March 1, 2024"
- */
 export function formatDate(value: string | Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    year:  'numeric',
-    month: 'long',
-    day:   'numeric'
+  return new Intl.DateTimeFormat('en-KE', {
+    year: 'numeric', month: 'long', day: 'numeric'
   }).format(new Date(value));
 }
 
-/**
- * Truncate a string to `maxLength` characters, appending "…" if cut.
- */
-export function truncate(text: string, maxLength = 120): string {
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength).trimEnd()}…`;
+export function timeAgo(value: string | Date): string {
+  const diff  = Date.now() - new Date(value).getTime();
+  const mins  = Math.floor(diff / 60_000);
+  const hours = Math.floor(diff / 3_600_000);
+  const days  = Math.floor(diff / 86_400_000);
+  if (days  > 0) return `${days}d ago`;
+  if (hours > 0) return `${hours}h ago`;
+  if (mins  > 0) return `${mins}m ago`;
+  return 'Just now';
 }
 
-/**
- * Return a CSS class string, filtering out falsy values.
- *
- * @example cn('rounded', isActive && 'bg-sky-500') → "rounded bg-sky-500"
- */
+export function truncate(text: string, max = 100): string {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trimEnd()}…`;
+}
+
 export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(' ');
 }
 
-/**
- * Return a fallback image URL when a property has no uploaded images.
- */
-export const PLACEHOLDER_IMAGE =
-  'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80';
+export function buildWhatsAppLink(phone: string, title: string, price: number): string {
+  const clean = phone.replace(/\D/g, '');
+  const msg   = encodeURIComponent(
+    `Hi! I'm interested in your listing: *${title}* at KES ${price.toLocaleString()}/mo. Is it still available?`
+  );
+  return `https://wa.me/${clean}?text=${msg}`;
+}

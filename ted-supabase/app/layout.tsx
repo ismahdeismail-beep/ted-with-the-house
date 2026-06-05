@@ -1,22 +1,23 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title:       'TED WITH THE HOUSE',
-  description: 'Modern real estate marketplace built with Next.js and Supabase.'
+  description: 'Discover Nairobi rentals through short property videos.',
+};
+
+export const viewport: Viewport = {
+  width:               'device-width',
+  initialScale:        1,
+  viewportFit:         'cover',
+  themeColor:          '#000000',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        <div className="min-h-screen bg-slate-50 text-slate-900">
-          <Navbar />
-          <main>{children}</main>
-          <Footer />
-        </div>
+      <body className="bg-black antialiased">
+        {children}
       </body>
     </html>
   );

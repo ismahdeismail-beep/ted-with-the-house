@@ -2,93 +2,169 @@
 
 import { use, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import TrustBadge from '@/components/TrustBadge';
+import ContactBar from '@/components/ContactBar';
 import { getPropertyById } from '@/lib/properties';
-import { formatPrice } from '@/lib/utils';
-import { PLACEHOLDER_IMAGE } from '@/lib/utils';
-import type { Property } from '@/types/property';
+import { formatPrice, timeAgo } from '@/lib/utils';
+import type { Property } from '@/lib/types';
 
-interface PropertyPageProps {
-  params: Promise<{ id: string }>;
-}
+const PLACEHOLDER = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1080&q=80';
 
-export default function PropertyDetailPage({ params }: PropertyPageProps) {
+type MediaItem = { type: 'video' | 'image'; src: string };
+const FALLBACK_MEDIA: MediaItem = { type: 'image', src: PLACEHOLDER };
+
+export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [property, setProperty] = useState<Property | null>(null);
   const [loading,  setLoading]  = useState(true);
+  const [mediaIdx, setMediaIdx] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
-    async function load() {
-      const item = await getPropertyById(id);
-      if (!item) {
-        router.replace('/properties');
-        return;
-      }
-      setProperty(item);
+    getPropertyById(id).then(data => {
+      if (!data) { router.replace('/'); return; }
+      setProperty(data);
       setLoading(false);
-    }
-
-    load();
+    });
   }, [id, router]);
 
   if (loading) {
     return (
-      <div className="container py-20 text-center text-slate-500">
-        Loading property…
+      <div className="flex h-screen items-center justify-center bg-zinc-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-white" />
       </div>
     );
   }
 
   if (!property) return null;
 
-  return (
-    <section className="container py-10">
-      <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr]">
-        <div className="space-y-6 rounded-3xl bg-white p-8 shadow-soft">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <span className="inline-flex rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700">
-                {property.type}
-              </span>
-              <span className="text-sm text-slate-500">{property.location}</span>
-            </div>
-            <h1 className="text-4xl font-semibold text-slate-900">{property.title}</h1>
-            <p className="text-3xl font-semibold text-slate-900">{formatPrice(property.price)}</p>
-          </div>
+  // Build unified media list: videos first, then images
+  const media: MediaItem[] = [
+    ...property.videos.map((src): MediaItem => ({ type: 'video', src })),
+    ...property.images.map((src): MediaItem => ({ type: 'image', src })),
+  ];
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(property.images.length ? property.images : [PLACEHOLDER_IMAGE]).map((src) => (
-              <img
-                key={src}
-                src={src}
-                alt={property.title}
-                className="h-52 w-full rounded-3xl object-cover shadow-xl"
+  // Always guaranteed to have one item
+  const current: MediaItem = media[mediaIdx] ?? media[0] ?? FALLBACK_MEDIA;
+
+  return (
+    <div className="flex min-h-screen flex-col bg-zinc-950 text-white">
+
+      {/* Back button */}
+      <div className="absolute top-4 left-4 z-50">
+        <button
+          onClick={() => router.back()}
+          className="rounded-full bg-black/60 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition hover:bg-black/80"
+        >
+          ← Back
+        </button>
+      </div>
+
+      {/* Media viewer */}
+      <div className="relative h-[55dvh] flex-shrink-0 bg-black">
+        {current.type === 'video' ? (
+          <video
+            key={current.src}
+            src={current.src}
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            controls
+          />
+        ) : (
+          <img
+            src={current.src}
+            alt={property.title}
+            className="h-full w-full object-cover"
+          />
+        )}
+
+        {/* Dot indicators */}
+        {media.length > 1 && (
+          <div className="absolute bottom-4 inset-x-0 flex justify-center gap-1.5">
+            {media.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setMediaIdx(i)}
+                className={`rounded-full transition-all ${
+                  i === mediaIdx ? 'h-1.5 w-5 bg-white' : 'h-1.5 w-1.5 bg-white/40'
+                }`}
               />
             ))}
           </div>
+        )}
+      </div>
 
-          <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-slate-900">Property details</h2>
-            <p className="leading-7 text-slate-600">{property.description}</p>
+      {/* Info panel */}
+      <div className="flex-1 overflow-y-auto px-5 py-6 pb-32 space-y-5">
+
+        {/* Price + badge */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-3xl font-bold">{formatPrice(property.price)}</p>
+            <h1 className="mt-1 text-lg font-semibold leading-snug text-zinc-100">
+              {property.title}
+            </h1>
+          </div>
+          <div className="shrink-0 pt-1">
+            <TrustBadge status={property.verified_status} />
           </div>
         </div>
 
-        <aside className="space-y-6 rounded-3xl bg-white p-8 shadow-soft">
+        {/* Location */}
+        <div className="flex items-center gap-2 text-sm text-zinc-400">
+          <span>📍</span>
+          <span>
+            {property.location.city} › {property.location.area} › {property.location.estate}
+          </span>
+        </div>
+
+        {/* Meta pills */}
+        <div className="flex flex-wrap gap-2">
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs capitalize text-zinc-200">
+            {property.property_type}
+          </span>
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs capitalize text-zinc-200">
+            {property.owner_type}
+          </span>
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs text-zinc-400">
+            Updated {timeAgo(property.updated_at)}
+          </span>
+        </div>
+
+        {/* Amenities */}
+        {property.amenities.length > 0 && (
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-slate-900">Ready to book?</h2>
-            <p className="text-slate-600">
-              Contact the owner and schedule a viewing for this listing.
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              Amenities
             </p>
+            <div className="flex flex-wrap gap-2">
+              {property.amenities.map(tag => (
+                <span key={tag} className="rounded-full bg-zinc-800 px-3 py-1.5 text-xs text-white">
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
-          <button className="w-full rounded-2xl bg-slate-900 px-6 py-4 text-sm font-semibold text-white transition hover:bg-slate-700">
-            Contact host
-          </button>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-            <p className="font-semibold text-slate-900">Location</p>
-            <p>{property.location}</p>
+        )}
+
+        {/* Description */}
+        {property.description && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+              About this property
+            </p>
+            <p className="text-sm leading-7 text-zinc-300">{property.description}</p>
           </div>
-        </aside>
+        )}
       </div>
-    </section>
+
+      {/* Fixed contact bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-800 bg-zinc-900/95 px-5 py-4 backdrop-blur-sm">
+        <ContactBar property={property} />
+      </div>
+    </div>
   );
 }
