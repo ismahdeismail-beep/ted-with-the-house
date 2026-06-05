@@ -3,13 +3,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import PropertyGrid from '@/components/PropertyGrid';
 import { getProperties } from '@/lib/properties';
-import type { Property } from '@/types/property';
+import type { Property, PropertyLocation } from '@/types/property';
 
 const filters = [
   { label: 'All', value: 'all' },
   { label: 'Rent', value: 'rent' },
   { label: 'Sale', value: 'sale' }
 ];
+
+function locationToString(loc: PropertyLocation): string {
+  return `${loc.city} ${loc.area} ${loc.estate}`.toLowerCase();
+}
 
 export default function PropertiesPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -29,10 +33,11 @@ export default function PropertiesPage() {
   }, []);
 
   const filteredProperties = useMemo(() => {
+    const searchLoc = location.toLowerCase().trim();
     return properties
       .filter((property) =>
-        location
-          ? property.location.toLowerCase().includes(location.toLowerCase())
+        searchLoc
+          ? locationToString(property.location).includes(searchLoc)
           : true
       )
       .filter((property) =>
