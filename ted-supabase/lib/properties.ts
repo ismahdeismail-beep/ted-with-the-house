@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { TABLES, STORAGE_BUCKETS } from '@/lib/constants';
-import type { Property, NewProperty, FilterState } from '@/lib/types';
+import type { Property, NewProperty, FilterState, Database } from '@/lib/types';
 
 // ─── Read ─────────────────────────────────────────────────────
 
@@ -77,20 +77,24 @@ export async function addProperty(
     ? await uploadFiles(imageFiles, STORAGE_BUCKETS.PROPERTY_IMAGES)
     : [];
 
-  const { error } = await supabase.from(TABLES.PROPERTIES).insert({
-    title:           property.title,
-    price:           property.price,
-    location:        property.location,
-    property_type:   property.property_type,
-    amenities:       property.amenities,
-    verified_status: property.verified_status,
-    owner_type:      property.owner_type,
-    whatsapp:        property.whatsapp,
-    phone:           property.phone,
-    description:     property.description,
-    videos:          videoUrls,
-    images:          imageUrls
-  });
+  const result = await supabase
+    .from(TABLES.PROPERTIES)
+    .insert({
+      title:           property.title,
+      price:           property.price,
+      location:        property.location,
+      property_type:   property.property_type,
+      amenities:       property.amenities,
+      verified_status: property.verified_status,
+      owner_type:      property.owner_type,
+      whatsapp:        property.whatsapp,
+      phone:           property.phone,
+      description:     property.description,
+      videos:          videoUrls,
+      images:          imageUrls
+    } as any);
+  
+  const { error } = result;
 
   if (error) throw new Error(error.message);
 }
