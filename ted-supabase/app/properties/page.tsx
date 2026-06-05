@@ -7,8 +7,12 @@ import type { Property, PropertyLocation } from '@/types/property';
 
 const filters = [
   { label: 'All', value: 'all' },
-  { label: 'Rent', value: 'rent' },
-  { label: 'Sale', value: 'sale' }
+  { label: 'Apartment', value: 'apartment' },
+  { label: 'House', value: 'house' },
+  { label: 'Studio', value: 'studio' },
+  { label: 'Bedsitter', value: 'bedsitter' },
+  { label: 'Room', value: 'room' },
+  { label: 'Villa', value: 'villa' }
 ];
 
 function locationToString(loc: PropertyLocation): string {
@@ -28,7 +32,6 @@ export default function PropertiesPage() {
       setProperties(items);
       setLoading(false);
     }
-
     load();
   }, []);
 
@@ -41,7 +44,7 @@ export default function PropertiesPage() {
           : true
       )
       .filter((property) =>
-        typeFilter === 'all' ? true : property.type === typeFilter
+        typeFilter === 'all' ? true : property.property_type === typeFilter
       )
       .filter((property) => {
         if (priceFilter === 'under-2000') return property.price < 2000;
